@@ -1,0 +1,147 @@
+#!/usr/bin/env perl
+
+use 5.008;
+use strict;
+use warnings;
+use Getopt::Long;
+use Time::Local;
+use Time::Piece;
+use Data::Dumper; #[]
+
+use Helios::ObjectDriver;
+use Helios::LogEntry::Levels ':all';
+use Helios::JobType;
+use HeliosX::Logger::HiRes::LogEntry;
+
+our $VERSION = '0.10_0000';
+
+our @LOG_PRIORITIES = qw(EMERG ALERT CRIT ERR WARNING NOTICE INFO DEBUG);
+our $LIMIT_DEFAULT = 50;
+
+our ($OPT_START_DATE, $OPT_END_DATE, $OPT_HOSTNAME, $OPT_PID, $OPT_JOBID,
+     $OPT_JOBTYPE, $OPT_SERVICE, $OPT_MESSAGE, $OPT_LIMIT, $OPT_SORT);
+our ($OPT_HELP, $OPT_VERSION, $OPT_DEBUG);
+
+our $DEBUG_MODE = 0;
+
+GetOptions(
+    "start-date=s" => \$OPT_START_DATE,
+    "end-date=s"   => \$OPT_END_DATE,
+    "hostname=s"   => \$OPT_HOSTNAME,
+    "pid=i"        => \$OPT_PID,
+    "jobid=s"      => \$OPT_JOBID,
+    "jobtype=s"    => \$OPT_JOBTYPE,
+    "service=s"    => \$OPT_SERVICE,
+    "message=s"    => \$OPT_MESSAGE,
+    "limit=i"      => \$OPT_LIMIT,
+    "sort=s"       => \$OPT_SORT,
+	"help"         => \$OPT_HELP,
+	"version"      => \$OPT_VERSION,
+	"debug"        => \$OPT_DEBUG,
+);
+
+# SPECIAL MODES
+
+# Help mode
+if ($OPT_HELP) {
+	require Pod::Usage;
+	Pod::Usage::pod2usage(-verbose => 2, -exitstatus => 0);
+}
+
+# Debug mode
+$DEBUG_MODE = 1 if $OPT_DEBUG;
+
+# Setup search options
+
+my %search_opts;
+
+if ($OPT_PID) {
+    $search_opts{pid} = $OPT_PID;
+}
+
+if ($OPT_JOBID) {
+    $search_opts{jobid} = $OPT_JOBID;
+}
+
+if ($OPT_HOSTNAME) {
+    $search_opts{host} = $OPT_HOSTNAME;
+}
+
+if ($OPT_SERVICE) {
+    $search_opts{service} = $OPT_SERVICE;
+}
+
+if ($OPT_JOBTYPE) {
+	my $jt = Helios::JobType->lookup(name => $OPT_JOBTYPE);
+    $search_opts{jobtypeid} = $jt->getJobtypeid();
+}
+
+
+my $limit = $LIMIT_DEFAULT;
+
+if ($OPT_START_DATE || $OPT_END_DATE) {
+    my $sd_epoch = '';
+    my $ed_epoch = '';
+    
+    if ($OPT_START_DATE) {
+        # convert Ts and Zs to spaces
+        my ($sd, $st) = split(/[ T]/, $OPT_START_DATE);
+        my ($yyyy, $mm, $dd) = split('-', $sd);
+        my ($hh24, $mi, $ss) = split(':', $st);
+        $sd_epoch = timelocal($ss, $mi, $hh24, $dd, $mm - 1, $yyyy);
+    }
+    
+    if ($OPT_END_DATE) {
+        # convert Ts and Zs to spaces
+        my ($ed, $et) = split(/[ T]/, $OPT_END_DATE);
+        my ($yyyy, $mm, $dd) = split('-', $ed);
+        my ($hh24, $mi, $ss) = split(':', $et);
+        $ed_epoch = timelocal($ss, $mi, $hh24, $dd, $mm - 1, $yyyy);
+    }
+    
+    if ($sd_epoch && $ed_epoch) {
+        $search_opts{log_time} = \"between $sd_epoch and $ed_epoch"
+    } elsif ($sd_epoch) {
+        $search_opts{log_time} = \">= $sd_epoch";
+    } elsif ($ed_epoch) {
+        $search_opts{log_time} = \"<= $ed_epoch";        
+    }
+    
+}
+
+
+if ($OPT_LIMIT) {
+    $limit = $OPT_LIMIT;
+}
+
+my $sort_order = 'ascend';
+if ($OPT_SORT && $OPT_SORT =~/^desc/ ) {
+    $sort_order = 'descend';
+}
+
+
+
+eval {
+    my $drvr = Helios::ObjectDriver->getDriver();
+    my @logs = $drvr->search('HeliosX::Logger::HiRes::LogEntry' =>
+        { %search_opts },
+        { sort => 'log_time', direction => $sort_order, limit => $limit }
+    );    
+    foreach ( @logs ) {
+#        print Dumper($_);        
+        my $tp = localtime $_->log_time;
+        my ($sec, $fract) = split(/\./, $_->log_time);
+        my $date = $tp->ymd.' '.$tp->hms.'.'.$fract;
+        my $jobinfo = $_->jobid ? ' [Jobid '.$_->jobid.']' : '';
+        print $_->logid,' [',$date,'] ',$_->host,' ',$_->service,'[',$_->pid,']: ',$LOG_PRIORITIES[$_->priority],$jobinfo,' ',$_->message,"\n";
+    }
+    
+    1;
+} or do {
+    print $@,"\n";
+    exit (42);
+};
+
+
+
+
