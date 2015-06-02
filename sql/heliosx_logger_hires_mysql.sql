@@ -1,4 +1,4 @@
-CREATE TABLE helios_log_entry_hires_tb (
+CREATE TABLE helios_log_entry_tb (
     logid           BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
     log_time        DECIMAL(32,6) UNSIGNED NOT NULL,
     host            VARCHAR(64),
@@ -10,5 +10,5 @@ CREATE TABLE helios_log_entry_hires_tb (
     message         MEDIUMBLOB,
     INDEX(log_time, logid)
 );
-CREATE INDEX helios_leth_lt_idx ON helios_log_tb (log_time);
+CREATE INDEX helios_let_lt_idx ON helios_log_entry_tb (log_time);
 

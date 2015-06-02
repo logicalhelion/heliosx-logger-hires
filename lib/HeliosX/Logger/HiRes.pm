@@ -64,48 +64,48 @@ sub init { }
 =cut
 
 sub logMsg {
-	my $self = shift;
-	my ($job, $priority, $message) = @_;
+    my $self = shift;
+    my ($job, $priority, $message) = @_;
 
-	my $success = 0;
-	my $retries = 0;
-	my $err;
+    my $success = 0;
+    my $retries = 0;
+    my $err;
 
-	my $jobid = defined($job) ? $job->getJobid() : undef;
-	my $jobtypeid = defined($job) ? $job->getJobtypeid() : undef;
-	
-	do {
-		eval {
+    my $jobid = defined($job) ? $job->getJobid() : undef;
+    my $jobtypeid = defined($job) ? $job->getJobtypeid() : undef;
+    
+    do {
+        eval {
 
-			my $drvr = $self->getDriver();
-			my $obj = HeliosX::Logger::HiRes::LogEntry->new(
-				log_time  => sprintf("%.6f", time()),
-				host      => $self->getHostname(),
-				pid       => $$,
-				jobid     => $jobid,
-				jobtypeid => $jobtypeid,
-				service   => $self->getService(),
-				priority  => defined($priority) ? $priority : LOG_INFO,
-				message   => $message,
-			);
-			$drvr->insert($obj);
-			1;
-		};
-		if ($@) {
-			$err = $@;
-			$retries++;
-			sleep RETRY_INTERVAL;
-		} else {
-			# no exception? then declare success and move on
-			$success = 1;
-		}
-	} until ($success || ($retries > MAX_RETRIES));
-	
-	unless ($success) {
-		Helios::Error::LoggingError->throw(__PACKAGE__."->logMsg() ERROR: $err");
-	}
-	
-	return 1;	
+            my $drvr = $self->getDriver();
+            my $obj = HeliosX::Logger::HiRes::LogEntry->new(
+                log_time  => sprintf("%.6f", time()),
+                host      => $self->getHostname(),
+                pid       => $$,
+                jobid     => $jobid,
+                jobtypeid => $jobtypeid,
+                service   => $self->getService(),
+                priority  => defined($priority) ? $priority : LOG_INFO,
+                message   => $message,
+            );
+            $drvr->insert($obj);
+            1;
+        };
+        if ($@) {
+            $err = $@;
+            $retries++;
+            sleep RETRY_INTERVAL;
+        } else {
+            # no exception? then declare success and move on
+            $success = 1;
+        }
+    } until ($success || ($retries > MAX_RETRIES));
+    
+    unless ($success) {
+        Helios::Error::LoggingError->throw(__PACKAGE__."->logMsg() ERROR: $err");
+    }
+    
+    return 1;    
 }
 
 1;

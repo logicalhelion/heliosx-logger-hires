@@ -1,5 +1,5 @@
 -- Log Table
-CREATE TABLE helios_log_entry_hires_tb
+CREATE TABLE helios_log_entry_tb
 (
     logid NUMBER(24,0) PRIMARY KEY NOT NULL,
     log_time DECIMAL(32,6) NOT NULL,
@@ -12,10 +12,10 @@ CREATE TABLE helios_log_entry_hires_tb
     message VARCHAR2(4000)
 );
 
-CREATE INDEX helios_leht_lt_idx ON helios_log_entry_hires_tb (log_time);
-CREATE INDEX helios_leht_lt_lid_idx ON helios_log_entry_hires_tb (log_time, logid);
+CREATE INDEX helios_let_lt_idx ON helios_log_entry_tb (log_time);
+CREATE INDEX helios_let_lt_lid_idx ON helios_log_entry_tb (log_time, logid);
 
-CREATE SEQUENCE helios_leht_lid_seq
+CREATE SEQUENCE helios_log_entry_tb_logid_seq
 MINVALUE 1
 MAXVALUE 999999999999999999999999
 INCREMENT BY 1
@@ -24,9 +24,9 @@ CACHE 2000
 NOORDER
 NOCYCLE;
 
-CREATE OR REPLACE TRIGGER helios_leht_lid_trg
+CREATE OR REPLACE TRIGGER helios_let_lid_trg
 BEFORE INSERT OR UPDATE
-ON helios_log_entry_hires_tb
+ON helios_log_entry_tb
 REFERENCING OLD AS OLD NEW AS NEW
 FOR EACH ROW
 DECLARE
@@ -34,20 +34,20 @@ v_newVal NUMBER(12) := 0;
 v_incval NUMBER(12) := 0;
 BEGIN
   IF INSERTING AND :new.logid IS NULL THEN
-    SELECT  helios_leht_lid_seq.nextval INTO v_newVal FROM DUAL;
+    SELECT  helios_log_entry_tb_logid_seq.nextval INTO v_newVal FROM DUAL;
     -- If this is the first time this table have been inserted into (sequence == 1)
     IF v_newVal = 1 THEN
       --get the max indentity value from the table
-      SELECT NVL(max(logid),0) INTO v_newVal FROM helios_log_entry_hires_tb;
+      SELECT NVL(max(logid),0) INTO v_newVal FROM helios_log_entry_tb;
       v_newVal := v_newVal + 1;
       --set the sequence to that value
       LOOP
            EXIT WHEN v_incval>=v_newVal;
-           SELECT helios_leht_lid_seq.nextval INTO v_incval FROM dual;
+           SELECT helios_log_entry_tb_logid_seq.nextval INTO v_incval FROM dual;
       END LOOP;
     END IF;
    :new.logid := v_newVal;
   END IF;
 END;
 /
-ALTER TRIGGER helios_leht_lid_trg ENABLE;
+ALTER TRIGGER helios_let_lid_trg ENABLE;

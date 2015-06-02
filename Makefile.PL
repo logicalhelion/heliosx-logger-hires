@@ -18,17 +18,17 @@ my %eumm_params = (
 
 # meta
 if (ExtUtils::MakeMaker->VERSION >= 6.46 ) {
-	$eumm_params{META_MERGE} = {
-		'meta-spec' => { version => 1.4 },
-		resources => {
-			repository => 'git://github.com/logicalhelion/heliosx-logger-hires.git',
-		},
-	};
+    $eumm_params{META_MERGE} = {
+        'meta-spec' => { version => 1.4 },
+        resources => {
+            repository => 'git://github.com/logicalhelion/heliosx-logger-hires.git',
+        },
+    };
 }
 
 # minimum Perl version
 if (ExtUtils::MakeMaker->VERSION >= 6.48 ) {
-	$eumm_params{MIN_PERL_VERSION} = 5.008;
+    $eumm_params{MIN_PERL_VERSION} = 5.008;
 }
 
 # write that Makefile
