@@ -1,9 +1,9 @@
 HeliosX-Logger-HiRes version 0.10
 =================================
 
-HeliosX::Logger::HiRes is a Helios::Logger logging class that provides logging
-with high-resolution timestamp precision with a more normalized database
-structure.
+HeliosX::Logger::HiRes is a Helios::Logger logging class that provides
+logging with high-resolution timestamp precision with a more
+normalized database structure.
 
 INSTALLATION
 
@@ -14,12 +14,20 @@ To install this module type the following:
    make test
    make install
 
+This module requires schema modifications to your Helios collective
+database.  Data description language (DDL) describing these
+modifications are detailed in files in the sql/ directory.  Find the
+.sql file appropriate to your RDBMS and modify it as necessary for
+your environment, and run the SQL to create the database structures.
+
 DEPENDENCIES
 
 This module requires these other modules and libraries:
 
   Helios 2.8x
+  Time::HiRes 1.86
   Time::Piece 1.12
+  parent 0.221
 
 COPYRIGHT AND LICENSE
 

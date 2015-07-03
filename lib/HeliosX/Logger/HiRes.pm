@@ -12,7 +12,7 @@ use Helios::LogEntry::Levels ':all';
 use Helios::Error::LoggingError;
 use HeliosX::Logger::HiRes::LogEntry;
 
-our $VERSION = '0.10_0000';
+our $VERSION = '0.10_0001';
 
 =head1 NAME
 
@@ -44,8 +44,58 @@ view and search for log messages at the command line.
 
 =head1 CONFIGURATION
 
-#[] missing
+HeliosX::Logger::HiRes must be added to your service using the B<loggers>
+directive either using the B<helios_config_set> command or in B<helios.ini>.
 
+Additionally, as HeliosX::Logger::HiRes is largely intended to replace the
+Helios internal logger, once you are sure it is working properly in your
+installation you should turn off the Helios default logger using the
+B<internal_logger=off> option.
+
+See the L<Helios::Configuration> page for complete information about the
+B<loggers> and B<internal_logger> directives.
+
+HeliosX::Logger::HiRes itself can be configured using the options below:
+
+=over 4
+
+=item * log_priority_threshold
+
+Unlike L<HeliosX::Logger::Syslog> and L<HeliosX::Logger::Log4perl>,
+HeliosX::Logger::HiRes supports the Helios internal logger's
+B<log_priority_threshold> option to limit the messages actually being logged
+to a certain level.  Unlike the others, HeliosX::Logger::HiRes is intended to
+replace rather than augment the Helios internal logger, so most users running
+HeliosX::Logger::HiRes will most likely turn off the Helios internal
+logger.  Rather than create confusion with a separate threshold option,
+HeliosX::Logger::HiRes honors the internal logger's built-in
+B<log_priority_threshold> option.
+
+The B<log_priority_threshold> value should be an integer matching one of the
+Helios logging priorities in L<Helios::LogEntry::Levels>:
+
+ Priority Name    Integer Value
+ LOG_EMERG        0
+ LOG_ALERT        1
+ LOG_CRIT         2
+ LOG_ERR          3
+ LOG_WARNING      4
+ LOG_NOTICE       5
+ LOG_INFO         6
+ LOG_DEBUG        7
+
+Examples:
+
+ # in helios.ini
+ # for all services on this host, log everything but debug messages
+ [global]
+ log_priority_threshold=6
+
+ # at the command line, set all instances of MyService
+ # to only log warnings and worse
+ helios_config_set -s MyService -H="*" -p log_priority_threshold -v 4
+ 
+=back
 
 =head1 IMPLEMENTED METHODS
 
@@ -59,18 +109,34 @@ sub init { }
 
 =head2 logMsg($job, $priority, $message)
 
-#[] description
+The logMsg() method takes a job, priority, and log message and savesthe message
+to the high-resolution log table in the Helios collective database.
+
+The job parameter should be a Helios::Job object.  If the job value is
+undefined, no jobid is saved with the message.
+
+If the priority parameter is undefined, logMsg() defaults the message's
+priority to 6 (LOG_INFO).
 
 =cut
 
 sub logMsg {
     my $self = shift;
+    unless (scalar @_ == 3) { Helios::Error::LoggingError->throw(__PACKAGE__."->logMsg() ERROR:  logMsg() requires 3 arguments:  \$job, \$priority, \$message."); }    
     my ($job, $priority, $message) = @_;
 
+    # deal with the log priority & threshold (if set)
+    $priority = defined($priority) ? $priority : LOG_INFO;
+    my $threshold = defined($self->getConfig()->{log_priority_threshold}) ? $self->getConfig()->{log_priority_threshold} : LOG_DEBUG;
+    if ($priority > $threshold) {
+        return 1;
+    }
+    
     my $success = 0;
     my $retries = 0;
     my $err;
 
+    # deal with jobid & jobtypeid
     my $jobid = defined($job) ? $job->getJobid() : undef;
     my $jobtypeid = defined($job) ? $job->getJobtypeid() : undef;
     
@@ -85,7 +151,7 @@ sub logMsg {
                 jobid     => $jobid,
                 jobtypeid => $jobtypeid,
                 service   => $self->getService(),
-                priority  => defined($priority) ? $priority : LOG_INFO,
+                priority  => $priority,
                 message   => $message,
             );
             $drvr->insert($obj);

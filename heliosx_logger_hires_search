@@ -6,7 +6,6 @@ use warnings;
 use Getopt::Long;
 use Time::Local;
 use Time::Piece;
-use Data::Dumper; #[]
 
 use Helios::ObjectDriver;
 use Helios::LogEntry::Levels ':all';
@@ -33,7 +32,7 @@ our ($OPT_START_DATE, $OPT_END_DATE, $OPT_HOSTNAME, $OPT_PID, $OPT_JOBID,
     $OPT_SORT, $OPT_TAIL, $OPT_FOLLOW);
 our ($OPT_HELP, $OPT_VERSION, $OPT_DEBUG);
 
-our $DEBUG_MODE  = 1;
+our $DEBUG_MODE  = 0;
 our $FOLLOW_MODE = 0;
 our $TAIL_MODE   = 0;
 our $LAST_LOGID  = 0;
@@ -41,6 +40,7 @@ our $LAST_LOGID  = 0;
 GetOptions(
     "start-date=s"    => \$OPT_START_DATE,
     "end-date=s"      => \$OPT_END_DATE,
+
     "hostname=s"      => \$OPT_HOSTNAME,
     "pid=i"           => \$OPT_PID,
     "jobid=s"         => \$OPT_JOBID,
@@ -48,10 +48,12 @@ GetOptions(
     "service=s"       => \$OPT_SERVICE,
     "message=s"       => \$OPT_MESSAGE,
     "priority=s"      => \$OPT_PRIORITY,
+
     "n|lines|limit=i" => \$OPT_LIMIT,
     "sort=s"          => \$OPT_SORT,
     "tail"            => \$OPT_TAIL,
     "follow"          => \$OPT_FOLLOW,
+
     "help"            => \$OPT_HELP,
     "version"         => \$OPT_VERSION,
     "debug"           => \$OPT_DEBUG,
@@ -174,7 +176,10 @@ if ($FOLLOW_MODE) {
 
 #[] t
 if ($DEBUG_MODE) {
-    print Dumper(\%search_opts);
+    print "SEARCH OPTIONS:\n";
+    foreach my $opt (sort keys %search_opts) {
+        print $opt,' => ',$search_opts{opt},"\n";
+    }
 }
 
 
@@ -190,13 +195,13 @@ eval {
     }
 
     foreach ( @logs ) {
-#        print Dumper($_);        
         my $tp = localtime $_->log_time;
         my ($sec, $fract) = split(/\./, $_->log_time);
         my $date = $tp->ymd.' '.$tp->hms.'.'.$fract;
         my $jobinfo = $_->jobid ? ' [Jobid '.$_->jobid.']' : '';
         $LAST_LOGID = $_->logid;
-        print $_->logid,' [',$date,'] ',$_->host,' ',$_->service,'[',$_->pid,']: ',$LOG_PRIORITIES[$_->priority],$jobinfo,' ',$_->message,"\n";
+        print $_->logid.' ' if $DEBUG_MODE; #[]t
+        print '[',$date,'] ',$_->host,' ',$_->service,'[',$_->pid,']: ',$LOG_PRIORITIES[$_->priority],$jobinfo,' ',$_->message,"\n";
     }
     
     1;
@@ -215,13 +220,13 @@ if ($FOLLOW_MODE) {
                 { sort => 'log_time', direction => 'ascend' }
             );    
             foreach ( @logs ) {
-            #        print Dumper($_);        
                 my $tp = localtime $_->log_time;
                 my ($sec, $fract) = split(/\./, $_->log_time);
                 my $date = $tp->ymd.' '.$tp->hms.'.'.$fract;
                 my $jobinfo = $_->jobid ? ' [Jobid '.$_->jobid.']' : '';
                 $LAST_LOGID = $_->logid;
-                print $_->logid,' [',$date,'] ',$_->host,' ',$_->service,'[',$_->pid,']: ',$LOG_PRIORITIES[$_->priority],$jobinfo,' ',$_->message,"\n";
+                print $_->logid.' ' if $DEBUG_MODE; #[]t
+                print '[',$date,'] ',$_->host,' ',$_->service,'[',$_->pid,']: ',$LOG_PRIORITIES[$_->priority],$jobinfo,' ',$_->message,"\n";
             }
             1;
         } or do {
@@ -268,20 +273,20 @@ heliosx_logger_hires_search - search the Helios high resolution log
 
 The heliosx_logger_hires_search command can be used to display log messages
 matching specified criteria in the enhanced Helios log provided by
-HeliosX::Logger::HiRes.  It provides a much more convenient way of accessing
+L<HeliosX::Logger::HiRes>.  It provides a much more convenient way of accessing
 log messages than using SQL queries from a database client like SQL*Plus or
 sqlite3.
 
 =head1 RUN OPTIONS
 
-=head2 start-date="YYYY-MM-DDTHH24:MI:SS"
+=head2 --start-date="YYYY-MM-DDTHH24:MI:SS"
 
-=head2 end-date="YYYY-MM-DDTHH24:MI:SS"
+=head2 --end-date="YYYY-MM-DDTHH24:MI:SS"
 
 Specify a date range of log messages to display.  Dates should be in ISO8601
 format.  If only --start-date is specified, log messages will be displayed from
 that date forward until there are no more log messages.  If only --end-date is
-specified, log messages will be displayed from the the earliest through the
+specified, log messages will be displayed from the earliest through the
 end date specified.
 
 Normally, heliosx_logger_hires_search displays a maximum number of log

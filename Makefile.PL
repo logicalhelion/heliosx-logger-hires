@@ -11,6 +11,7 @@ my %eumm_params = (
                           'Helios'      => 2.80,
                           'Time::HiRes' => 1.86,
                           'Time::Piece' => 1.12,
+                          'parent'      => 0.221,
                          }, 
     EXE_FILES         => ['heliosx_logger_hires_search'],
     INST_SCRIPT       => 'bin',
