@@ -24,6 +24,7 @@ DEPENDENCIES
 This module requires these other modules and libraries:
 
 * Helios 2.80 or later
+* JSON::Tiny 0.48 or later
 * Time::HiRes 1.86 or later
 * Time::Piece 1.12 or later
 * parent 0.221 or later
