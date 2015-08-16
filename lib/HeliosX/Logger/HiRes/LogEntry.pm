@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base 'Data::ObjectDriver::BaseObject';
 
-our $VERSION = '0.10_0000';
+our $VERSION = '1.00';
 
 __PACKAGE__->install_properties({
     columns => [

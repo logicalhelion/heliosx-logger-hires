@@ -15,7 +15,7 @@ use Helios::LogEntry::Levels ':all';
 use Helios::JobType;
 use HeliosX::Logger::HiRes::LogEntry;
 
-our $VERSION = '0.10_3270';
+our $VERSION = '1.00';
 
 our @LOG_PRIORITIES = qw(EMERG ALERT CRIT ERR WARNING NOTICE INFO DEBUG);
 our %LOG_PRIORITY_MAP = (
@@ -259,7 +259,6 @@ if ($OPT_OUTPUT_FORMAT) {
     
 }
 
-#[]t
 if ($DEBUG_MODE) {
     print "SEARCH OPTIONS:\n";
     foreach my $opt (sort keys %search_opts) {
@@ -315,7 +314,7 @@ eval {
             }
             
             # default output:  log
-            print $_->logid.' ' if $DEBUG_MODE;  #[]t
+            print $_->logid.' ' if $DEBUG_MODE;
             print '[',$date,'] ',$_->host,' ',$_->service,'[',$_->pid,']: ',$LOG_PRIORITIES[$_->priority],$jobinfo,' ',$_->message,"\n";
             
         }
@@ -341,7 +340,7 @@ if ($FOLLOW_MODE) {
                 my $date = $tp->ymd.' '.$tp->hms.'.'.$fract;
                 my $jobinfo = $_->jobid ? ' [Jobid '.$_->jobid.']' : '';
                 $LAST_LOGID = $_->logid;
-                print $_->logid.' ' if $DEBUG_MODE; #[]t
+                print $_->logid.' ' if $DEBUG_MODE;
                 print '[',$date,'] ',$_->host,' ',$_->service,'[',$_->pid,']: ',$LOG_PRIORITIES[$_->priority],$jobinfo,' ',$_->message,"\n";
             }
             1;
@@ -349,7 +348,7 @@ if ($FOLLOW_MODE) {
             print STDERR 'ERROR: ',$@, "\n";
             exit(1);
         };
-        sleep 5;
+        sleep 1;
     }
 }
 

@@ -12,7 +12,7 @@ use Helios::LogEntry::Levels ':all';
 use Helios::Error::LoggingError;
 use HeliosX::Logger::HiRes::LogEntry;
 
-our $VERSION = '0.10_3270';
+our $VERSION = '1.00';
 
 =head1 NAME
 
